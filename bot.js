@@ -27,8 +27,9 @@ function startBot() {
     client = bedrock.createClient(botOptions);
 
     client.on('start_game', (packet) => {
-      // التأكد من قراءة الـ ID كـ BigInt إذا كان السيرفر يرسله كذلك
-      botRuntimeId = packet.runtime_id || packet.entity_id;
+      // قراءة المعرف وتحويله فوراً لـ BigInt صريح لتفادي أي خلط لاحقاً
+      const rawId = packet.runtime_id || packet.entity_id;
+      botRuntimeId = typeof rawId === 'bigint' ? rawId : BigInt(rawId);
       
       if (packet.player_position) {
         botPosition = { ...packet.player_position };
@@ -36,12 +37,16 @@ function startBot() {
         botPosition = { ...packet.position };
       }
       
-      console.log(`[معلومات] تم التعرف على معرف البوت بنجاح: ${botRuntimeId}`);
+      console.log(`[معلومات] تم التعرف على معرف البوت بنجاح: ${botRuntimeId.toString()}`);
     });
 
     client.on('move_player', (packet) => {
-      if (botRuntimeId && (packet.runtime_id === botRuntimeId || packet.entity_id === botRuntimeId)) {
-        botPosition = packet.position;
+      if (botRuntimeId) {
+        const pId = packet.runtime_id || packet.entity_id;
+        const compareId = typeof pId === 'bigint' ? pId : BigInt(pId);
+        if (compareId === botRuntimeId) {
+          botPosition = packet.position;
+        }
       }
     });
 
@@ -77,7 +82,7 @@ function startBot() {
 function startNaturalAFKLoop() {
   if (afkInterval) clearInterval(afkInterval);
 
-  console.log(`[⚙️] تم تفعيل حلقة المشي والالتفات الطبيعي المتوافقة مع الـ BigInt.`);
+  console.log(`[⚙️] تم تفعيل حلقة المشي الصارمة المتوافقة مع بنية البروتوكول.`);
 
   afkInterval = setInterval(() => {
     if (!client || !botRuntimeId) return;
@@ -95,23 +100,23 @@ function startNaturalAFKLoop() {
     };
 
     try {
-      // حل مشكلة الكراش: تحويل الـ IDs والـ tick إلى الأنواع الصارمة التي تطلبها المكتبة
+      // هنا قمنا بتقفيل وتعبئة كل المتغيرات التي قد تسبب حيرة للمكتبة لمنع الـ SizeOf error
       client.queue('move_player', {
-        runtime_id: typeof botRuntimeId === 'bigint' ? botRuntimeId : BigInt(botRuntimeId),
+        runtime_id: botRuntimeId,
         position: {
-          x: parseFloat(naturalMovement.x),
-          y: parseFloat(naturalMovement.y),
-          z: parseFloat(naturalMovement.z)
+          x: parseFloat(naturalMovement.x) || 0.0,
+          y: parseFloat(naturalMovement.y) || 0.0,
+          z: parseFloat(naturalMovement.z) || 0.0
         },
-        pitch: parseFloat(randomPitch),
-        yaw: parseFloat(randomYaw),
-        head_yaw: parseFloat(randomYaw),
-        mode: 0,
+        pitch: parseFloat(randomPitch) || 0.0,
+        yaw: parseFloat(randomYaw) || 0.0,
+        head_yaw: parseFloat(randomYaw) || 0.0,
+        mode: 0, 
         on_ground: true,
-        riding_runtime_id: 0n, // 0n تعني BigInt صفر لمنع خطأ الخلط
+        riding_runtime_id: 0n, 
         teleport_cause: 0,
         teleport_item_id: 0,
-        tick: 0n               // 0n لمنع خطأ SizeOf error for undefined
+        tick: 0n
       });
     } catch (e) {
       console.error(`[!] فشل إرسال حزمة المشي التلقائي:`, e.message);
@@ -129,8 +134,7 @@ function triggerRetry() {
 
   if (retryTimer) return;
 
-  // رفعنا المهلة لـ 45 ثانية لإعطاء أترنوس وقت لتصفير الجلسة القديمة ومنع طرد logged_in_other_location
-  console.log(`⏳ سيتم إعادة المحاولة تلقائياً خلال 45 ثانية لإعادة تهيئة الجلسة...`);
+  console.log(`⏳ سيتم إعادة المحاولة تلقائياً خلال 45 ثانية...`);
   retryTimer = setTimeout(() => {
     retryTimer = null;
     startBot();
