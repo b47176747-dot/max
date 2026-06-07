@@ -4,7 +4,6 @@ on:
   push:
     branches: [ "main" ]
   schedule:
-    # يعمل تلقائياً كل 15 دقيقة لإنعاش السيرفر وضمان عدم إغلاقه
     - cron: '*/15 * * * *'
 
 jobs:
@@ -12,19 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js Environment
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: 'npm'
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Install NPM Dependencies
-      run: npm install
+      - name: Install NPM Dependencies
+        run: npm install
 
-    - name: Execute Bedrock Bot
-      run: node bot.js
-      # نضع حداً أقصى لتشغيل الأكشن (25 دقيقة) لحفظ استهلاك ساعات GitHub المجانية
-      timeout-minutes: 25
+      - name: Execute Bedrock Bot
+        run: node bot.js
+        timeout-minutes: 25
