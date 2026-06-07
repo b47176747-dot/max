@@ -15,19 +15,19 @@ let afkInterval = null;
 
 let botRuntimeId = null;
 let botPosition = { x: 0, y: 0, z: 0 };
-let moveToggle = false; // للتبديل بين الحركة للأمام والخلف
+let moveToggle = false; 
 
 function startBot() {
   if (retryTimer) clearTimeout(retryTimer);
   if (afkInterval) clearInterval(afkInterval);
   
-  console.log(`[اتصال] جاري الدخول إلى سيرفر البدروك المطور...`);
+  console.log(`[اتصال] جاري الدخول إلى سيرفر البدروك...`);
 
   try {
     client = bedrock.createClient(botOptions);
 
-    // إلغاء الـ undefined وقراءة المعرف والموقع بأكثر من طريقة آمنة
     client.on('start_game', (packet) => {
+      // التأكد من قراءة الـ ID كـ BigInt إذا كان السيرفر يرسله كذلك
       botRuntimeId = packet.runtime_id || packet.entity_id;
       
       if (packet.player_position) {
@@ -48,7 +48,6 @@ function startBot() {
     client.on('spawn', () => {
       console.log(`[+] دخل ${botOptions.username} إلى السيرفر وهو الآن مستقر!`);
       
-      // مهلة أطول (8 ثوانٍ) لضمان تحميل الخريطة والمودات بالكامل قبل بدء الحركة
       setTimeout(() => {
         startNaturalAFKLoop();
       }, 8000);
@@ -75,20 +74,17 @@ function startBot() {
   }
 }
 
-// حلقة حركة طبيعية تخدع حماية الـ BedWars والأنتيشيت
 function startNaturalAFKLoop() {
   if (afkInterval) clearInterval(afkInterval);
 
-  console.log(`[⚙️] تم تفعيل حلقة المشي والالتفات الطبيعي المناهض للأنتيشيت.`);
+  console.log(`[⚙️] تم تفعيل حلقة المشي والالتفات الطبيعي المتوافقة مع الـ BigInt.`);
 
   afkInterval = setInterval(() => {
     if (!client || !botRuntimeId) return;
 
-    // زوايا رؤية طبيعية
     const randomYaw = Math.random() * 360;
     const randomPitch = (Math.random() * 20) - 10;
 
-    // تبديل الحركة: مرة يتقدم 0.3 بلوكة ومرة يعود لمكانه لمنع الطرد
     moveToggle = !moveToggle;
     const offset = moveToggle ? 0.3 : -0.3;
 
@@ -99,23 +95,28 @@ function startNaturalAFKLoop() {
     };
 
     try {
+      // حل مشكلة الكراش: تحويل الـ IDs والـ tick إلى الأنواع الصارمة التي تطلبها المكتبة
       client.queue('move_player', {
-        runtime_id: botRuntimeId,
-        position: naturalMovement,
-        pitch: randomPitch,
-        yaw: randomYaw,
-        head_yaw: randomYaw,
+        runtime_id: typeof botRuntimeId === 'bigint' ? botRuntimeId : BigInt(botRuntimeId),
+        position: {
+          x: parseFloat(naturalMovement.x),
+          y: parseFloat(naturalMovement.y),
+          z: parseFloat(naturalMovement.z)
+        },
+        pitch: parseFloat(randomPitch),
+        yaw: parseFloat(randomYaw),
+        head_yaw: parseFloat(randomYaw),
         mode: 0,
         on_ground: true,
-        riding_runtime_id: 0,
+        riding_runtime_id: 0n, // 0n تعني BigInt صفر لمنع خطأ الخلط
         teleport_cause: 0,
         teleport_item_id: 0,
-        tick: 0
+        tick: 0n               // 0n لمنع خطأ SizeOf error for undefined
       });
     } catch (e) {
       console.error(`[!] فشل إرسال حزمة المشي التلقائي:`, e.message);
     }
-  }, 6000); // تكرار كل 6 ثوانٍ (وقت مثالي وآمن جداً للسيرفرات)
+  }, 6000); 
 }
 
 function triggerRetry() {
@@ -128,11 +129,12 @@ function triggerRetry() {
 
   if (retryTimer) return;
 
-  console.log(`⏳ سيتم إعادة المحاولة تلقائياً خلال 30 ثانية...`);
+  // رفعنا المهلة لـ 45 ثانية لإعطاء أترنوس وقت لتصفير الجلسة القديمة ومنع طرد logged_in_other_location
+  console.log(`⏳ سيتم إعادة المحاولة تلقائياً خلال 45 ثانية لإعادة تهيئة الجلسة...`);
   retryTimer = setTimeout(() => {
     retryTimer = null;
     startBot();
-  }, 30000);
+  }, 45000);
 }
 
 startBot();
