@@ -6,70 +6,70 @@ const botOptions = {
     username: 'RealPlayer_AFK',
     offline: true,
     version: '1.26.20',
-    device: {
-        deviceOS: 1,
-        deviceModel: 'Pixel 7'
-    },
+    device: { deviceOS: 1, deviceModel: 'Pixel 7' },
     skipPing: false
 };
 
+let movementInterval = null;
+
 function startBot() {
-    console.log('🔄 جاري الاتصال بـ Bluelightmine...');
-    
-    let client;
-    try {
-        client = createClient(botOptions);
-    } catch (e) {
-        console.log('⚠️ خطأ في إنشاء العميل، إعادة المحاولة بعد 30 ثانية...');
-        setTimeout(startBot, 30000);
-        return;
-    }
+    console.log('🔄 جاري محاولة إنشاء اتصال جديد...');
+
+    // تنظيف أي عملية سابقة
+    if (movementInterval) clearInterval(movementInterval);
+
+    const client = createClient(botOptions);
 
     client.on('connect', () => {
         console.log('✅ تم الاتصال بنجاح!');
     });
 
     client.on('spawn', () => {
-        console.log('🎮 البوت دخل العالم!');
+        console.log('🎮 البوت دخل العالم ويقوم بالحركة...');
         
-        const movementInterval = setInterval(() => {
-            if (client) {
-                try {
-                    client.write('player_auth_input', {
-                        pitch: Math.random() * 90 - 45,
-                        yaw: Math.random() * 360 - 180,
-                        position: { x: 0, y: 0, z: 0 },
-                        moveVector: { x: (Math.random() - 0.5) * 0.1, z: (Math.random() - 0.5) * 0.1 },
-                        inputMode: 0,
-                        playMode: 0,
-                        interactionMode: 0,
-                        transaction: { type: 0 }
-                    });
-                } catch (err) {
-                    clearInterval(movementInterval);
-                }
+        movementInterval = setInterval(() => {
+            try {
+                client.write('player_auth_input', {
+                    pitch: Math.random() * 90 - 45,
+                    yaw: Math.random() * 360 - 180,
+                    position: { x: 0, y: 0, z: 0 },
+                    moveVector: { x: (Math.random() - 0.5) * 0.1, z: (Math.random() - 0.5) * 0.1 },
+                    inputMode: 0,
+                    playMode: 0,
+                    interactionMode: 0,
+                    transaction: { type: 0 }
+                });
+            } catch (err) {
+                console.log('⚠️ تعذر إرسال الحركة.');
+                clearInterval(movementInterval);
             }
         }, 30000);
     });
 
-    // التعامل مع الأخطاء التي تمنع الاتصال (مثل السيرفر المغلق)
-    client.on('error', (err) => {
-        console.log('⚠️ خطأ بروتوكول (غالباً السيرفر مغلق):', err.message);
-        // لا نقوم بإنهاء البرنامج، بل نعيد الاتصال بعد فترة
+    // استخدام 'once' لضمان عدم تكرار النداء عند حدوث خطأ
+    client.once('error', (err) => {
+        console.log('⚠️ خطأ بروتوكول:', err.message);
+        if (movementInterval) clearInterval(movementInterval);
         setTimeout(startBot, 60000);
     });
 
-    client.on('kick', (packet) => {
-        console.log('❌ تم الطرد. السبب:', packet.reason || 'Silent Disconnect');
+    client.once('kick', (packet) => {
+        console.log('❌ تم الطرد:', packet.reason || 'Unknown');
+        if (movementInterval) clearInterval(movementInterval);
         setTimeout(startBot, 60000);
     });
 
-    // إغلاق العميل بشكل آمن عند حدوث قطع
-    client.on('close', () => {
-        console.log('🔌 الاتصال مغلق، إعادة المحاولة بعد 60 ثانية...');
+    client.once('close', () => {
+        console.log('🔌 الاتصال انقطع، إعادة المحاولة في دقيقة...');
+        if (movementInterval) clearInterval(movementInterval);
         setTimeout(startBot, 60000);
     });
 }
 
-// البدء
+// معالجة الأخطاء غير المتوقعة في مستوى العملية (Node.js Process)
+process.on('uncaughtException', (err) => {
+    console.log('🚨 خطأ غير متوقع:', err.message);
+    setTimeout(startBot, 60000);
+});
+
 startBot();
