@@ -1,14 +1,13 @@
 const { createClient } = require('bedrock-protocol');
 
-// إعدادات البوت (تعديلات التمويه)
 const botOptions = {
     host: 'Bluelightmine.aternos.me',
     port: 51069,
     username: 'RealPlayer_AFK',
     offline: true,
-    version: '1.26.20', // أحدث إصدار متوافق
+    version: '1.26.20',
     device: {
-        deviceOS: 1, // Android
+        deviceOS: 1,
         deviceModel: 'Pixel 7'
     },
     skipPing: false
@@ -17,18 +16,23 @@ const botOptions = {
 function startBot() {
     console.log('🔄 جاري الاتصال بـ Bluelightmine...');
     
-    const client = createClient(botOptions);
+    let client;
+    try {
+        client = createClient(botOptions);
+    } catch (e) {
+        console.log('⚠️ خطأ في إنشاء العميل، إعادة المحاولة بعد 30 ثانية...');
+        setTimeout(startBot, 30000);
+        return;
+    }
 
     client.on('connect', () => {
         console.log('✅ تم الاتصال بنجاح!');
     });
 
     client.on('spawn', () => {
-        console.log('🎮 البوت دخل العالم! يقوم الآن بالتفاعل...');
+        console.log('🎮 البوت دخل العالم!');
         
-        // تفعيل الحركة العشوائية الآمنة
         const movementInterval = setInterval(() => {
-            // نتحقق أولاً من أن البوت لا يزال داخل العالم
             if (client) {
                 try {
                     client.write('player_auth_input', {
@@ -42,20 +46,27 @@ function startBot() {
                         transaction: { type: 0 }
                     });
                 } catch (err) {
-                    console.log('⚠️ تعذر إرسال الحركة، قد يكون البوت قد طُرد.');
                     clearInterval(movementInterval);
                 }
             }
-        }, 30000); // كل 30 ثانية
+        }, 30000);
     });
 
+    // التعامل مع الأخطاء التي تمنع الاتصال (مثل السيرفر المغلق)
     client.on('error', (err) => {
-        console.log('⚠️ خطأ بروتوكول:', err.message);
+        console.log('⚠️ خطأ بروتوكول (غالباً السيرفر مغلق):', err.message);
+        // لا نقوم بإنهاء البرنامج، بل نعيد الاتصال بعد فترة
+        setTimeout(startBot, 60000);
     });
 
     client.on('kick', (packet) => {
         console.log('❌ تم الطرد. السبب:', packet.reason || 'Silent Disconnect');
-        console.log('⏳ إعادة المحاولة بعد 60 ثانية...');
+        setTimeout(startBot, 60000);
+    });
+
+    // إغلاق العميل بشكل آمن عند حدوث قطع
+    client.on('close', () => {
+        console.log('🔌 الاتصال مغلق، إعادة المحاولة بعد 60 ثانية...');
         setTimeout(startBot, 60000);
     });
 }
