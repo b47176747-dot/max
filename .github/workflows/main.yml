@@ -2,14 +2,14 @@ name: Bedrock AFK Bot 24/7
 
 on:
   schedule:
-    - cron: '0 */2 * * *' 
-  workflow_dispatch:      
+    - cron: '0 */2 * * *' # إعادة تشغيل كاملة كل ساعتين
+  workflow_dispatch:
   push:
     branches: [ main, master ]
 
 concurrency:
   group: bedrock-afk-bot
-  cancel-in-progress: true
+  cancel-in-progress: true # يمنع تراكم البوتات في السيرفر
 
 jobs:
   run-bot:
@@ -24,11 +24,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 📦 تثبيت المكتبات (Mineflayer + Bedrock)
-        run: |
-          # نقوم بتثبيت المكتبات المحددة في package.json مباشرة
-          npm install
+      - name: 📦 تثبيت المكتبات
+        run: npm install
 
       - name: 🤖 تشغيل بوت الأفروة المضاد للطرد
         timeout-minutes: 340 
-        run: node bot.js
+        # حلقة التكرار (while loop) تضمن إعادة تشغيل البوت فوراً إذا انهار الكود
+        run: |
+          while true; do
+            echo "🔄 بدء تشغيل البوت..."
+            node bot.js
+            echo "⚠️ البوت توقف، إعادة التشغيل بعد 10 ثوانٍ..."
+            sleep 10
+          done
