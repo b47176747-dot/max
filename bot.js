@@ -1,23 +1,26 @@
-const mineflayer = require('mineflayer');
-const bedrock = require('mineflayer-bedrock');
+const { createClient } = require('bedrock-protocol');
 
-const bot = mineflayer.createBot({
-  host: 'Bluelightmine.aternos.me',
-  port: 51069,
-  username: 'RealPlayer_AFK',
-  version: '1.26.20', // المكتبة هنا تتعامل مع النسخة بمرونة أكبر
-  plugins: [bedrock.plugin] 
-});
+function startBot() {
+    const client = createClient({
+        host: 'Bluelightmine.aternos.me',
+        port: 51069,
+        username: 'RealPlayer_AFK',
+        offline: true,
+        // نستخدم رقم إصدار ثابت يعمل مع معظم سيرفرات أترنوس
+        version: '1.20.0' 
+    });
 
-bot.on('spawn', () => {
-  console.log('البوت دخل العالم بنجاح عبر بروتوكول RakNet!');
-});
+    client.on('connect', () => console.log('تم الاتصال!'));
+    
+    // الأهم: منع إغلاق البوت عند حدوث خطأ في حزمة واحدة
+    client.on('error', (err) => {
+        console.log('خطأ عابر، البوت مستمر...');
+    });
 
-bot.on('error', (err) => {
-  console.error('خطأ في الاتصال:', err);
-});
+    client.on('kick', (reason) => {
+        console.log('تم الطرد، إعادة المحاولة بعد 60 ثانية...');
+        setTimeout(startBot, 60000);
+    });
+}
 
-bot.on('end', () => {
-  console.log('انقطع الاتصال، جاري إعادة المحاولة...');
-  setTimeout(() => process.exit(0), 1000); // إعادة تشغيل السكربت بالكامل لضمان نظافة الذاكرة
-});
+startBot();
