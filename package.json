@@ -4,7 +4,8 @@
   "description": "Minecraft Bedrock AFK Bot for Aternos",
   "main": "bot.js",
   "dependencies": {
-    "bedrock-protocol": "latest"
+    "mineflayer": "latest",
+    "mineflayer-bedrock": "latest"
   },
   "scripts": {
     "start": "node bot.js"
