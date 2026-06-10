@@ -4,7 +4,7 @@ const options = {
     host: 'Bluelightmine.aternos.me',        // ضع هنا الآيبي الخاص بسيرفرك
     port: 51069,                   // البورت
     username: 'BedrockBot',        // اسم البوت
-    version: '1.21.20',            // الإصدار
+    version: '1.26.20',            // الإصدار
     offline: true                  
 };
 
