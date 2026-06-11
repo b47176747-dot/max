@@ -77,7 +77,7 @@ function createBot() {
 
             // الانتظار 35 ثانية كاملة ليتأكد السيرفر من خروج البوت تماماً ومسحه من الذاكرة قبل الدخول مجدداً
             console.log("سيتأخر بدء الاتصال الجديد لـ 35 ثانية لتفادي مشكلة البوت المزدوج...");
-            setTimeout(createBot, 35000);
+            setTimeout(createBot, 60000);
         };
 
         client.on('close', () => handleDisconnect('إغلاق القناة close'));
@@ -85,7 +85,7 @@ function createBot() {
 
     } catch (error) {
         console.log("فشل كلي في بدء تشغيل العميل: ", error.message);
-        setTimeout(createBot, 35000);
+        setTimeout(createBot, 60000);
     }
 }
 
