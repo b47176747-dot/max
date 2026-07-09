@@ -1,10 +1,10 @@
 const bedrock = require('bedrock-protocol');
 
 const options = {
-    host: 'MAX_season_2.aternos.me'        
+    host: 'MAX_season_2.aternos.me';        
     port: 35615                    
     username: 'BedrockBot'                 
-    version: '1.26.32'                     
+    version: '1.26.32.2'                     
     offline: true                           
 };
 
